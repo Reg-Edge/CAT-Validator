@@ -1,11 +1,14 @@
 import csv
 import json
+import math
 import os
 import pandas as pd
 
 input_file_dir_path = os.getcwd() + "\\Input"
 config_file_path = os.getcwd() + "\\config\\CAT_2d_schema.json"
 global_schema = json.load(open(config_file_path, 'r'))
+output_file_path = os.getcwd() + "\\Output"
+error_logs = []
 
 def determine_file_type(filename):
     try:
@@ -66,19 +69,55 @@ def fetch_event_schema(record):
     return event_schema
 
 def required_fields_check(record, event_schema):
-    error_logs = []
-    error_col_list = ['Exception Type', 'Atribute Name', 'Value']
-    error_messages = pd.DataFrame(columns = error_col_list )
+    #error_col_list = ['Exception Type', 'Attribute Name', 'Value']
+    #error_messages = pd.DataFrame(columns = error_col_list)
 
     schema_of_fields = event_schema.get("fields")
-    for k,v in record.items():
-        specific_field_schema = [x for x in schema_of_fields if x["name"] == k][0]
-        if specific_field_schema.get("required") == 'Required' and v == '':
-            error_messages['Exception Type'] = 'Required field check'
-            error_messages['Attribute Name'] = k
-            error_messages['Value'] = v
-            error_logs.append(error_messages)
-        error_messages = pd.DataFrame(columns = error_col_list)
+    for field in schema_of_fields:
+        field_name = field["name"]
+        if field.get("required") == 'Required' and (record.get(field_name) is None or record.get(field_name) == ''):
+            #error_messages = error_messages.append({'Exception Type': 'Required field check', 'Attribute Name': field_name, 'Value': ''})
+            # error_messages['Attribute Name'] = field_name
+            # breakpoint()
+            # error_messages['Exception Type'] = 'Required field check'
+            # error_messages['Value'] = ''
+            error_logs.append({'Exception Type': 'Required field check', 'Attribute Name': field_name, 'Value': '', 'Allowed Values': ''})
+        #error_messages = pd.DataFrame(columns = error_col_list)
+            
+def allowed_values_check(record, event_schema):
+    schema_of_fields = event_schema.get("fields")
+    schema_of_enums = global_schema["choices"]
+    for field in schema_of_fields:
+        field_name = field["name"]
+        if schema_of_enums.get(field_name) is None:
+            continue
+        enum_list = schema_of_enums.get(field_name)
+        #Accounting for empty field and permissible value "NA" in below line
+        if (record.get(field_name) == '' or record.get(field_name) is None) and ("NA" in enum_list):
+            continue
+        if (record.get(field_name)) not in enum_list:
+            error_logs.append({'Exception Type': 'Allowed Values Check', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Allowed Values': ",".join(enum_list)})
+
+
+
+
+
+        
+
+def export_to_csv(error_logs):
+    if error_logs:
+        export_logs = pd.DataFrame(error_logs)
+        export_logs.to_csv(output_file_path+ "\\error_log.csv", index = False)
+    else:
+        print("No error logs")
+
+    
+
+
+    # for k,v in record.items():
+    #     specific_field_schema = [x for x in schema_of_fields if x["name"] == k][0]
+    #     if specific_field_schema.get("required") == 'Required' and v == '':
+            
     
         
 
@@ -88,7 +127,8 @@ def required_fields_check(record, event_schema):
 def main():
     unified_format = []
     for file in os.listdir(input_file_dir_path):
-        breakpoint()
+        if file != 'ZUnitTest.json':
+            continue
         if determine_file_type_using_name(file) == 'JSON':
             unified_format = json_input_parse(file)
         elif determine_file_type_using_name(file) == 'CSV':
@@ -96,6 +136,9 @@ def main():
         for record in unified_format:
             event_schema = fetch_event_schema(record)
             required_fields_check(record,event_schema)
+            allowed_values_check(record,event_schema)
+    export_to_csv(error_logs)
+
 
             
 
