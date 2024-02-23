@@ -1,9 +1,10 @@
+import pandas as pd
 import csv
 import json
 import os
-import pandas as pd
+import re
 
-input_file_dir_path = os.getcwd() + "\\Input"
+input_file_dir_path = os.getcwd() + "\\Input\\"
 config_file_path = os.getcwd() + "\\config\\CAT_2d_schema.json"
 global_schema = json.load(open(config_file_path, 'r'))
 
@@ -86,7 +87,9 @@ def required_fields_check(record, event_schema):
 
                 
 def main():
-    unified_format = []
+
+    cat_file_re = re.compile('[0-9]{2,4}_[]')
+
     for file in os.listdir(input_file_dir_path):
         breakpoint()
         if determine_file_type_using_name(file) == 'JSON':
