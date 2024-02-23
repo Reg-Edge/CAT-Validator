@@ -99,7 +99,6 @@ def allowed_values_check(record, event_schema):
             error_logs.append({'Exception Type': 'Value not in list of permissible values', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Allowed Values': ",".join(enum_list), 'Error Code': 'E02', 'Event Type': event_schema["eventName"],'Expected Data Type': '', 'Maximum Field Length': ''})
 
 def data_type_check(record, event_schema):
-    #TODO Timestamp JSONDataType is nested in list_of_datatypes and field["dataType"] may also be nested
     schema_of_fields = event_schema.get("fields")
     list_of_datatypes = global_schema["dataTypes"]
     for field in schema_of_fields:
@@ -111,7 +110,9 @@ def data_type_check(record, event_schema):
                 continue
             specific_data_type_schema = specific_data_type_schema[0]
             specific_JS0N_data_type = specific_data_type_schema.get("JSONDataType")
-            if specific_JS0N_data_type == 'STRING' and not(isinstance(record.get(field_name), str)):
+            if field_datatype == 'Timestamp' and not(isinstance(record.get(field_name), (str,int,float))):
+                error_logs.append({'Exception Type': 'Incorrect Datatype', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Allowed Values': '', 'Error Code': 'E03', 'Event Type': event_schema["eventName"],'Expected Data Type': 'STRING or NUMBER', 'Maximum Field Length': ''})
+            elif specific_JS0N_data_type == 'STRING' and not(isinstance(record.get(field_name), str)):
                 error_logs.append({'Exception Type': 'Incorrect Datatype', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Allowed Values': '', 'Error Code': 'E03', 'Event Type': event_schema["eventName"],'Expected Data Type': 'STRING', 'Maximum Field Length': ''})
             elif specific_JS0N_data_type == 'NUMBER' and not(isinstance(record.get(field_name), (int,float))):
                 error_logs.append({'Exception Type': 'Incorrect Datatype', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Allowed Values': '', 'Error Code': 'E03', 'Event Type': event_schema["eventName"],'Expected Data Type': 'NUMBER', 'Maximum Field Length': ''})
