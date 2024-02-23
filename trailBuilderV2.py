@@ -63,9 +63,7 @@ class TreeNode:
             for node in nodes:
                 if not node.Parent: #and node.data['type'] not in {'MEOT', 'MEOF'}:
                     print("leaf has no parent")
-                elif node.Parent == node.data.get('orderID') and node.data['type'] not in {'MEOR', 'MOOR', 'MEORS', 'MOORS',
-                                                                                           'MEMR', 'MOMR', 'MEMRS', 'MOMRS',
-                                                                                           'MECR', 'MOCR', 'MECRS', 'MOCRS'}:
+                elif node.Parent == node.data.get('orderID') and node.data['type'] not in {'MEOR', 'MOOR', 'MEORS', 'MOORS','MEMR', 'MOMR', 'MEMRS', 'MOMRS','MECR', 'MOCR', 'MECRS', 'MOCRS'}:
                     if TreeNode.Roots.get(node.Parent):
                         parent = TreeNode.Roots[node.Parent]
                         parent.Children.append(node)
@@ -107,7 +105,7 @@ def main(orderID):
     fidessa_re = re.compile('1234_ABCD_20240101_TEST_OrderEvents_000001.json')
     for file in os.listdir(cwd):
         if not fidessa_re.search(file): continue
-        print(file)
+        print(cwd + file)
         inf = open(cwd + file, 'r', encoding="UTF-8")
         for line in inf:
             record = json.loads(line)
@@ -124,17 +122,17 @@ def main(orderID):
 
         inf.close()
     TreeNode.sort()
+    
 
     try:
-        print(TreeNode.Roots[orderID])
-        return TreeNode.Roots[orderID]
+        return TreeNode.Roots[str(orderID)]
     except Exception as e:
-        print(TreeNode.Leaves[orderID])
-        return TreeNode.Leaves[orderID]
+        print(TreeNode.Leaves[str(orderID)])
+        return TreeNode.Leaves[str(orderID)]
     
-    for key, node in TreeNode.Roots.items():
-        node.display(0, orderID=None, routedOrderID=None, eventTimestamp=None, accountHolderType=None,
-                     deptType=None, symbol=None, quantity=None, side=None, routeRejectedFlag=None)
+    # for key, node in TreeNode.Roots.items():
+    #     node.display(0, orderID=None, routedOrderID=None, eventTimestamp=None, accountHolderType=None,
+    #                  deptType=None, symbol=None, quantity=None, side=None, routeRejectedFlag=None)
 
 
 

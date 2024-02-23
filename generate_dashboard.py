@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import trailBuilderV2
 
 st.set_page_config(layout="wide")
 
@@ -168,41 +168,16 @@ if st.session_state.page == 'CAT_SUMMARY_':
 if st.session_state.page == 'AUDIT TRAIL / DETAILED VIEW':
     #code for the summary
     st.write(f"DETAILED VIEW")
-    col1, col2, col3,col4 = st.columns(4)
-
-    with col1:
-        unique_symbols = data['symbol'].dropna().unique()
-        selected_symbol = st.selectbox('Symbol', options=['All'] + list(unique_symbols))
-
-    with col2:
-        # Determine a default date from your data
-        # Example: using the latest date in your dataset
-        default_date = data['eventTimestamp'].max().date()
-        selected_date = st.date_input("Event Date", value=default_date, key='event_date')
-
-    with col3:
-        asset_classes_options = list(asset_classes.keys())
-        selected_asset_class = st.selectbox('Asset Class', options=['All'] + list(asset_classes_options))
-
-    with col4:
-        event_categories = list(event_types.keys())
-        selected_event_category = st.selectbox('Event Type', options=['All'] + list(event_categories))
-
-    # Filter data based on selections
-
-    if selected_symbol != 'All':
-        data = data[data['symbol'] == selected_symbol]
-
-    # # Filter by the selected date
-    if selected_date is not None:
-        data = data[data['eventTimestamp'].dt.date == selected_date]
-
-    if selected_asset_class != 'All':
-        data = data[data['type'].isin(asset_classes[selected_asset_class])]
-
-    if selected_event_category != 'All':
-        data = data[data['type'].isin(event_types[selected_event_category])]
+    
 
     
+    unique_order_ids = data['orderID'].dropna().unique()
+    selected_order_id = st.selectbox('orderID', options=list(unique_order_ids))
+
+    # if selected_order_id != 'All':
+    #     data = data[data['orderID'] == selected_order_id]
+
+    parentOrderID = trailBuilderV2.main(selected_order_id)
+    st.write(parentOrderID)
     st.dataframe(data)
     st.write(f"Displaying {len(data)} rows of data")
