@@ -1,77 +1,71 @@
+import pandas as pd
+import warnings
 import csv
 import json
 import os
-import pandas as pd
+import re
 
-input_file_dir_path = os.getcwd() + "\\Input"
+warnings.simplefilter('ignore') 
+
+
+
+input_file_dir_path = os.getcwd() + "\\Input\\"
 config_file_path = os.getcwd() + "\\config\\CAT_2d_schema.json"
 global_schema = json.load(open(config_file_path, 'r'))
 
-def determine_file_type(filename):
-    try:
-        with open(filename, 'r') as file:
-            try:
-                json.load(file)
-                return 'JSON'
-            except json.JSONDecodeError:
-                pass
-            try:
-                csv.Sniffer().sniff(file.read(1024))
-                return 'CSV'
-            except csv.Error:
-                pass
-            return None
-    except FileNotFoundError:
-        return None
     
-def determine_file_type_using_name(file):
-    file_name,file_ext = os.path.splitext(file)
-    if file_ext.lower() == '.json':
+def determine_file_type(file):
+    if file[-5:].lower() == '.json':
         return 'JSON'
-    elif file_ext.lower == '.csv':
+    elif file[-4:].lower() == '.csv':
         return 'CSV'
     else:
-        return None
+        raise Exception(ValueError, f"Cannot read file : {file} - File is not CSV or JSON format")
     
-def json_input_parse(input_file):
-    #list of dicts
-    list_of_parsed_dicts = []
-    file_path = input_file_dir_path + "\\" + input_file
-    with open(file_path, 'r') as file:
-        for line in file:
-            try:
-                data = json.loads(line.strip())
-                list_of_parsed_dicts.append(data)
-            except json.JSONDecodeError as e:
-                print(f"Error parsing JSON: {e}")
-    return list_of_parsed_dicts
 
-def csv_input_parse(input_file):
-    #list of dicts
-    list_of_parsed_dicts = []
-    file_path = input_file_dir_path + "\\" + input_file
-    with open(file_path, 'r') as file:
-        read_csv = csv.DictReader(file)
-        for row in read_csv:
-            list_of_parsed_dicts.append(row)
-    return list_of_parsed_dicts
+def format_cat_data(filepath, csv_bool):
+    
+    for line in open(filepath, 'r'):
 
-def fetch_event_schema(record):
-    event = record.get("type")
+        line = line.replace('\n','')
 
-    event_defs = global_schema['eventDefinitions']
+        cat_event = {}
+        event_schema = []
 
-    event_schema = [x for x in event_defs if x["eventName"] == event][0]
-        
-    return event_schema
+        # For validation only two things are required - the cat_event and the event_schema 
+        # which will be used to validate the event
 
-def required_fields_check(record, event_schema):
+        # If json
+        if not csv_bool:
+
+            # Read event using json module to convert to dictionary
+            cat_event = json.loads(line)
+            event_type = cat_event['type']
+            event_schema = [event for event in global_schema['eventDefinitions'] if event['eventName'] == event_type][0]
+
+        # If csv
+        elif csv_bool:
+
+            # Split line by delimiter
+            cat_event_temp = line.split(',')
+            event_type = cat_event_temp[3]
+            event_schema = [event for event in global_schema['eventDefinitions'] if event['eventName'] == event_type][0]
+
+            # use event schema to convert csv to dictionary
+            for field in event_schema['fields']:
+                cat_event[field['name']] = cat_event_temp[int(field['position']) - 1]
+
+
+        yield cat_event, event_schema
+
+
+def required_fields_check(cat_event, event_schema):
     error_logs = []
     error_col_list = ['Exception Type', 'Atribute Name', 'Value']
     error_messages = pd.DataFrame(columns = error_col_list )
 
     schema_of_fields = event_schema.get("fields")
-    for k,v in record.items():
+    for k,v in cat_event.items():
         specific_field_schema = [x for x in schema_of_fields if x["name"] == k][0]
         if specific_field_schema.get("required") == 'Required' and v == '':
             error_messages['Exception Type'] = 'Required field check'
@@ -83,19 +77,33 @@ def required_fields_check(record, event_schema):
         
 
 
-
-                
 def main():
-    unified_format = []
+
+    cat_file_re = re.compile('^[0-9]{2,4}_[A-Z]{2,4}_[0-9]{8}_TEST_OrderEvents_[0-9]{6}\.(json|JSON|CSV|csv)$')
+
     for file in os.listdir(input_file_dir_path):
-        breakpoint()
-        if determine_file_type_using_name(file) == 'JSON':
-            unified_format = json_input_parse(file)
-        elif determine_file_type_using_name(file) == 'CSV':
-            unified_format = csv_input_parse(file)
-        for record in unified_format:
-            event_schema = fetch_event_schema(record)
-            required_fields_check(record,event_schema)
+
+        # only open files that match the cat file pattern regex
+        if not cat_file_re.match(file):
+             continue
+
+        # File type is determined as JSON records do not require enhancement whereas CSV records do
+        file_type = determine_file_type(file)
+
+
+        csv_bool = None
+        if file_type == 'JSON': csv_bool = False
+        elif file_type == 'CSV': csv_bool = True
+
+
+        formatted_cat_data = format_cat_data(input_file_dir_path+file, csv_bool)
+        for cat_event, event_schema in formatted_cat_data:
+
+            required_fields_check(cat_event, event_schema)
+
+
+
+
 
             
 
