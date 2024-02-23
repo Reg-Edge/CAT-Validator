@@ -101,10 +101,10 @@ class TreeNode:
 
 def main(orderID):
 
-    cwd = 'C:\\Users\\Jesus\\Documents\\CANTOR\\Input\\'
+    cwd = 'Input/'
     primaryEvents = {'MENO', 'MONO', 'MEOA', 'MOOA', 'MLNO', 'MLOA'}
 
-    fidessa_re = re.compile('All.json$')
+    fidessa_re = re.compile('1234_ABCD_20240101_TEST_OrderEvents_000001.json')
     for file in os.listdir(cwd):
         if not fidessa_re.search(file): continue
         print(file)
