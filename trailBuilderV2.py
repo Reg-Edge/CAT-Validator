@@ -99,7 +99,7 @@ class TreeNode:
             child_node.display(lvl + 1, **kwargs)
 
 
-def main():
+def main(orderID):
 
     cwd = 'C:\\Users\\Jesus\\Documents\\CANTOR\\Input\\'
     primaryEvents = {'MENO', 'MONO', 'MEOA', 'MOOA', 'MLNO', 'MLOA'}
@@ -124,6 +124,14 @@ def main():
 
         inf.close()
     TreeNode.sort()
+
+    try:
+        print(TreeNode.Roots[orderID])
+        return TreeNode.Roots[orderID]
+    except Exception as e:
+        print(TreeNode.Leaves[orderID])
+        return TreeNode.Leaves[orderID]
+    
     for key, node in TreeNode.Roots.items():
         node.display(0, orderID=None, routedOrderID=None, eventTimestamp=None, accountHolderType=None,
                      deptType=None, symbol=None, quantity=None, side=None, routeRejectedFlag=None)
@@ -142,4 +150,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    orderID = sys.argv[1]
+
+    main(orderID)
+
