@@ -60,20 +60,19 @@ def format_cat_data(filepath, csv_bool):
 
 
 def required_fields_check(cat_event, event_schema):
-    print(cat_event, event_schema)
-    # error_logs = []
-    # error_col_list = ['Exception Type', 'Atribute Name', 'Value']
-    # error_messages = pd.DataFrame(columns = error_col_list )
+    error_logs = []
+    error_col_list = ['Exception Type', 'Atribute Name', 'Value']
+    error_messages = pd.DataFrame(columns = error_col_list )
 
-    # schema_of_fields = event_schema.get("fields")
-    # for k,v in cat_event.items():
-    #     specific_field_schema = [x for x in schema_of_fields if x["name"] == k][0]
-    #     if specific_field_schema.get("required") == 'Required' and v == '':
-    #         error_messages['Exception Type'] = 'Required field check'
-    #         error_messages['Attribute Name'] = k
-    #         error_messages['Value'] = v
-    #         error_logs.append(error_messages)
-    #     error_messages = pd.DataFrame(columns = error_col_list)
+    schema_of_fields = event_schema.get("fields")
+    for k,v in cat_event.items():
+        specific_field_schema = [x for x in schema_of_fields if x["name"] == k][0]
+        if specific_field_schema.get("required") == 'Required' and v == '':
+            error_messages['Exception Type'] = 'Required field check'
+            error_messages['Attribute Name'] = k
+            error_messages['Value'] = v
+            error_logs.append(error_messages)
+        error_messages = pd.DataFrame(columns = error_col_list)
     
         
 
@@ -96,10 +95,12 @@ def main():
         if file_type == 'JSON': csv_bool = False
         elif file_type == 'CSV': csv_bool = True
 
-        for cat_event, event_schema in format_cat_data(input_file_dir_path+file, csv_bool):
+
+        formatted_cat_data = format_cat_data(input_file_dir_path+file, csv_bool)
+        for cat_event, event_schema in formatted_cat_data:
+
             required_fields_check(cat_event, event_schema)
 
-        # Open file and iterate through each line
 
 
 
