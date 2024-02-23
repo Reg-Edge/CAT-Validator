@@ -81,7 +81,7 @@ def required_fields_check(record, event_schema):
             # breakpoint()
             # error_messages['Exception Type'] = 'Required field check'
             # error_messages['Value'] = ''
-            error_logs.append({'Exception Type': 'Required field check', 'Attribute Name': field_name, 'Value': '', 'Allowed Values': ''})
+            error_logs.append({'Exception Type': 'Missing Field', 'Attribute Name': field_name, 'Value': '', 'Allowed Values': '', 'Error Code': 'E01', 'Event Type': event_schema["eventName"],'Expected Data Type': '', 'Maximum Field Length': ''})
         #error_messages = pd.DataFrame(columns = error_col_list)
             
 def allowed_values_check(record, event_schema):
@@ -96,7 +96,58 @@ def allowed_values_check(record, event_schema):
         if (record.get(field_name) == '' or record.get(field_name) is None) and ("NA" in enum_list):
             continue
         if (record.get(field_name)) not in enum_list:
-            error_logs.append({'Exception Type': 'Allowed Values Check', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Allowed Values': ",".join(enum_list)})
+            error_logs.append({'Exception Type': 'Value not in list of permissible values', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Allowed Values': ",".join(enum_list), 'Error Code': 'E02', 'Event Type': event_schema["eventName"],'Expected Data Type': '', 'Maximum Field Length': ''})
+
+def data_type_check(record, event_schema):
+    #TODO Timestamp JSONDataType is nested in list_of_datatypes and field["dataType"] may also be nested
+    schema_of_fields = event_schema.get("fields")
+    list_of_datatypes = global_schema["dataTypes"]
+    for field in schema_of_fields:
+        if not field["required"] == 'Required':
+            field_name = field["name"]
+            field_datatype = field["dataType"]
+            specific_data_type_schema = [x for x in list_of_datatypes if x.get("dataType") == field_datatype]
+            if not specific_data_type_schema:
+                continue
+            specific_data_type_schema = specific_data_type_schema[0]
+            specific_JS0N_data_type = specific_data_type_schema.get("JSONDataType")
+            if specific_JS0N_data_type == 'STRING' and not(isinstance(record.get(field_name), str)):
+                error_logs.append({'Exception Type': 'Incorrect Datatype', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Allowed Values': '', 'Error Code': 'E03', 'Event Type': event_schema["eventName"],'Expected Data Type': 'STRING', 'Maximum Field Length': ''})
+            elif specific_JS0N_data_type == 'NUMBER' and not(isinstance(record.get(field_name), (int,float))):
+                error_logs.append({'Exception Type': 'Incorrect Datatype', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Allowed Values': '', 'Error Code': 'E03', 'Event Type': event_schema["eventName"],'Expected Data Type': 'NUMBER', 'Maximum Field Length': ''})
+            elif specific_JS0N_data_type == 'BOOLEAN' and not(isinstance(record.get(field_name), bool)):
+                error_logs.append({'Exception Type': 'Incorrect Datatype', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Allowed Values': '', 'Error Code': 'E03', 'Event Type': event_schema["eventName"],'Expected Data Type': 'BOOLEAN', 'Maximum Field Length': ''})
+
+def max_length_check(record, event_schema):
+    schema_of_fields = event_schema.get("fields")
+    list_of_datatypes = global_schema["dataTypes"]
+    for field in schema_of_fields:
+        if not field["required"] == 'Required':
+            field_name = field["name"]
+            field_datatype = field["dataType"]
+            specific_data_type_schema = [x for x in list_of_datatypes if x.get("dataType") == field_datatype]
+            if not specific_data_type_schema:
+                continue
+            specific_data_type_schema = specific_data_type_schema[0]
+            field_max_length = 0
+            if specific_data_type_schema.get("maxLength") is not None:
+                field_max_length = specific_data_type_schema.get("maxLength")
+            length_of_field_data = 0
+            if record.get(field_name) is not None:
+                length_of_field_data = len(record.get(field_name))
+            if(length_of_field_data>field_max_length):
+                error_logs.append({'Exception Type': 'Field Length Exceeds maximum allowed length', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Allowed Values': '', 'Error Code': 'E04', 'Event Type': event_schema["eventName"],'Expected Data Type': '', 'Maximum Field Length': field_max_length})
+
+
+
+    
+
+# def field_exists_in_record(record,field_name):
+#     return (record.get(field_name))
+
+
+
+
 
 
 
@@ -107,6 +158,7 @@ def allowed_values_check(record, event_schema):
 def export_to_csv(error_logs):
     if error_logs:
         export_logs = pd.DataFrame(error_logs)
+        breakpoint()
         export_logs.to_csv(output_file_path+ "\\error_log.csv", index = False)
     else:
         print("No error logs")
@@ -137,6 +189,8 @@ def main():
             event_schema = fetch_event_schema(record)
             required_fields_check(record,event_schema)
             allowed_values_check(record,event_schema)
+            data_type_check(record,event_schema)
+            max_length_check(record,event_schema)
     export_to_csv(error_logs)
 
 
