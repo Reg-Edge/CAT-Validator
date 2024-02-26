@@ -58,7 +58,7 @@ def set_page(page_name):
 
 # Sidebar navigation using buttons
 st.sidebar.button('VIEW_CAT_DATA', on_click=set_page, args=('VIEW_CAT_DATA',))
-st.sidebar.button('CAT_SUMMARY', on_click=set_page, args=('CAT_SUMMARY_',))
+st.sidebar.button('CAT_SUMMARY', on_click=set_page, args=('CAT_SUMMARY',))
 st.sidebar.button('AUDIT TRAIL / DETAILED VIEW', on_click=set_page, args=('AUDIT TRAIL / DETAILED VIEW',))
 
 # Page 1: VIEW_CAT_DATA
@@ -104,65 +104,46 @@ if st.session_state.page == 'VIEW_CAT_DATA':
     st.dataframe(data)
     st.write(f"Displaying {len(data)} rows of data")
 
-if st.session_state.page == 'CAT_SUMMARY_':
+if st.session_state.page == 'CAT_SUMMARY':
+    st.header("CAT SUBMISSIONS ERROR LOGS")
+    data = pd.read_csv('error_log_1.csv')
     #code for the summary
-    st.write(f"CAT SUBMISSIONS SUMMARY")
-    pivot_table = pd.pivot_table(data, index='type', aggfunc='size').reset_index(name='Count')
-    col1, col2, col3, col4 = st.columns(4)
+    pivot_table_1 = pd.pivot_table(data, index=['Error Code', 'Exception Type'], aggfunc='size').reset_index(name='Count')
+    col1, col2, col3, col4 = st.columns([5,1,5,1])
 
     # Display a DataFrame in each column of the first row
+    pivot_table_2 = pd.pivot_table(data, index='Event Type', aggfunc='size').reset_index(name='Count')
+
     with col1:
-        st.write(pivot_table, height=100)  # Adjust height as necessary
+        st.write(pivot_table_1, height=100)  # Adjust height as necessary
 
     with col2:
-    # Using the pivot_table data to plot a bar chart
-        fig, ax = plt.subplots()
-        ax.bar(pivot_table['type'], pivot_table['Count'])
-        ax.set_xlabel('Event Type')
-        ax.set_ylabel('Count')
-        ax.set_title('Event Type Counts')
-        st.pyplot(fig)  # Adjust height as necessary
+        pass
+
+    pivot_table_3 = pd.pivot_table(data, index='Attribute Name', aggfunc='size').reset_index(name='Count')
 
     with col3:
-        st.write(pivot_table, height=100)  # Adjust height as necessary
+        st.write(pivot_table_2, height=100)  # Adjust height as necessary
 
     with col4:
-    # Using the pivot_table data to plot a bar chart
-        fig, ax = plt.subplots()
-        ax.bar(pivot_table['type'], pivot_table['Count'])
-        ax.set_xlabel('Event Type')
-        ax.set_ylabel('Count')
-        ax.set_title('Event Type Counts')
-        st.pyplot(fig)  # Adjust height as necessary
-
+        pass
     
-    col5, col6, col7, col8 = st.columns(4)
+    col5, col6, col7, col8 = st.columns([5,1,5,1])
 
     # Display a DataFrame in each column of the first row
     with col5:
-        st.write(pivot_table, height=100)  # Adjust height as necessary
+        st.write(pivot_table_3 ,height=100)  # Adjust height as necessary
+    pivot_table_4 = pd.pivot_table(data, index='Exception Type', aggfunc='size').reset_index(name='Count')
 
     with col6:
-    # Using the pivot_table data to plot a bar chart
-        fig, ax = plt.subplots()
-        ax.bar(pivot_table['type'], pivot_table['Count'])
-        ax.set_xlabel('type')
-        ax.set_ylabel('Count')
-        ax.set_title('Event Type Counts')
-        st.pyplot(fig)  # Adjust height as necessary
+        pass
 
     with col7:
-        st.write(pivot_table, height=100)  # Adjust height as necessary
+        
+        st.write(pivot_table_4, height=100)  # Adjust height as necessary
 
     with col8:
-    # Using the pivot_table data to plot a bar chart
-        fig, ax = plt.subplots()
-        ax.bar(pivot_table['type'], pivot_table['Count'])
-        ax.set_xlabel('Event Type')
-        ax.set_ylabel('Count')
-        ax.set_title('Event Type Counts')
-        st.pyplot(fig)  # Adjust height as necessary
-
+        pass
 
     
 if st.session_state.page == 'AUDIT TRAIL / DETAILED VIEW':
