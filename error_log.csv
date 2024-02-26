@@ -1,0 +1,35 @@
+Exception Type,Attribute Name,Value,Allowed Values,Error Code,Event Type
+Missing Field,actionType,,,E01,MENO
+Missing Field,firmROEID,,,E01,MENO
+Missing Field,deptType,,,E01,MENO
+Value not in list of permissible values,actionType,,"NEW,COR,RPR,DEL",E02,MENO
+Value not in list of permissible values,deptType,,"A,ATS,DMA,SA,T,O",E02,MENO
+Value not in list of permissible values,accountHolderType,B,"A,E,F,I,O,V,P,X",E02,MENO
+Value not in list of permissible values,atsDisplayInd,,"S,A,Y,N",E02,MENO
+Incorrect Datatype,errorROEID,,,E03,MENO
+Incorrect Datatype,price,,,E03,MENO
+Incorrect Datatype,minQty,,,E03,MENO
+Incorrect Datatype,displayPrice,,,E03,MENO
+Incorrect Datatype,workingPrice,,,E03,MENO
+Incorrect Datatype,displayQty,,,E03,MENO
+Incorrect Datatype,nbbPrice,,,E03,MENO
+Incorrect Datatype,nbbQty,,,E03,MENO
+Incorrect Datatype,nboPrice,,,E03,MENO
+Incorrect Datatype,nboQty,,,E03,MENO
+Incorrect Datatype,netPrice,,,E03,MENO
+Field Length Exceeds maximum allowed length,electronicTimestamp,20230210T134456.527,,E04,MENO
+Missing Field,electronicDupFlag,,,E01,MEOM
+Value not in list of permissible values,senderType,,"E,F,O",E02,MEOM
+Value not in list of permissible values,atsDisplayInd,,"S,A,Y,N",E02,MEOM
+Incorrect Datatype,errorROEID,,,E03,MEOM
+Incorrect Datatype,originatingIMID,,,E03,MEOM
+Incorrect Datatype,price,,,E03,MEOM
+Incorrect Datatype,minQty,,,E03,MEOM
+Incorrect Datatype,displayPrice,,,E03,MEOM
+Incorrect Datatype,workingPrice,,,E03,MEOM
+Incorrect Datatype,displayQty,,,E03,MEOM
+Incorrect Datatype,nbbPrice,,,E03,MEOM
+Incorrect Datatype,nbbQty,,,E03,MEOM
+Incorrect Datatype,nboPrice,,,E03,MEOM
+Incorrect Datatype,nboQty,,,E03,MEOM
+Incorrect Datatype,netPrice,,,E03,MEOM
