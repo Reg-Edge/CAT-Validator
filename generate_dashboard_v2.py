@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import trailBuilderV2
+
 class StreamlitApp:
     def __init__(self):
         self.setup_page()
@@ -179,9 +180,12 @@ class StreamlitApp:
         unique_order_ids = data['orderID'].dropna().unique()
         selected_order_id = st.selectbox('orderID', options=['Select an orderID'] + list(unique_order_ids))
 
+
+        TreeNodes = trailBuilderV2.main()
+
         if selected_order_id != 'Select an orderID':
             # Displaying the return value from trailBuilderV2.main(orderID)
-            trail_info = trailBuilderV2.main(selected_order_id)
+            trail_info = TreeNodes.traverse_up(selected_order_id)
             st.write(trail_info)
             filtered_data = data[data['orderID'] == selected_order_id]
             st.dataframe(filtered_data)
