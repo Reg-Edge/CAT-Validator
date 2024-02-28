@@ -181,11 +181,12 @@ class StreamlitApp:
         selected_order_id = st.selectbox('orderID', options=['Select an orderID'] + list(unique_order_ids))
 
 
-        TreeNodes = trailBuilderV2.main()
+        all_nodes = trailBuilderV2.main()
+        linkage_df = trailBuilderV2.determine_group_id(all_nodes)
 
         if selected_order_id != 'Select an orderID':
             # Displaying the return value from trailBuilderV2.main(orderID)
-            trail_info = TreeNodes.traverse_up(selected_order_id)
+            trail_info = trailBuilderV2.display_by_group_id(all_nodes, selected_order_id, linkage_df)
             st.write(trail_info)
             filtered_data = data[data['orderID'] == selected_order_id]
             st.dataframe(filtered_data)

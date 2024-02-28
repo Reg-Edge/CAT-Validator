@@ -3,6 +3,7 @@ import sys
 import re
 import json
 import copy
+import pandas as pd
 
 
 class Node:
@@ -11,6 +12,12 @@ class Node:
         self.Parent = None
         self.key = None
         self.data = data
+        self.eventTimestamp = data.get('eventTimestamp')
+        self.type = data.get('type')
+        self.quantity = data.get('quantity')
+        self.side = data.get('side')
+        self.price = data.get('price')
+        self.symbol = data.get('symbol') or data.get()
         self.Children = []
 
     def get_key(self, new_id_on_modify = False):
@@ -21,6 +28,7 @@ class Node:
         symbol = self.data.get('symbol', False)
         if not symbol:
             symbol = self.data.get('optionID') 
+
 
 
         if self.data.get('parentOrderID'):
@@ -75,13 +83,13 @@ class Node:
             cancel_replace_bool = event_type[-1] in {'C', 'M', 'S'} or event_type[:-2] in {'CR', 'MR'}
           
             if cancel_replace_bool and not new_id_on_modify:
-                self.Parent = CATReporterIMID+symbol+key+keyDate
+                self.Parent = CATReporterIMID+'_'+symbol+'_'+key+'_'+keyDate
         
-        self.key = CATReporterIMID+symbol+key+keyDate
+        self.key = CATReporterIMID+'_'+symbol+'_'+key+'_'+keyDate
 
     def add_key(self, all_nodes):
         key_collisions = all_nodes.get(self.key)
-
+        
         if key_collisions:
 
             self_timestamp = self.data.get('eventTimestamp')
@@ -101,73 +109,96 @@ class Node:
             all_nodes[self.key] = [self]
 
         return all_nodes
-
-    def display(self, lvl, **kwargs):
-        filters = {k: v for k, v in kwargs.items() if v}
-        # if self.data.get('orderID') == '2310130000000003':
-        #     breakpoint()
-        if lvl == 0:
-            for filter_, val in filters.items():
-                if self.data.get(filter_) != val:
-                    return
-        indent = '\t\t'*lvl
-        print(f'{indent}{self.data["type"]} SeqNum: {lvl}')
-        for k,v in kwargs.items():
-            print(f'{indent}{k}, {self.data.get(k)}')
-        print('')
-        for child_node in self.Children:
-            child_node.display(lvl + 1, **kwargs)
-
-    def traverse_up(self, orderID):
-        try:
-            return self.Roots[str(orderID)]
-        except Exception as e:
-            print(self.Leaves[str(orderID)])
-            return self.Leaves[str(orderID)]
-    
-    def sort(all_nodes):
-
-        for node_list in all_nodes.values():
-
-            for node in node_list:
-
-                CATReporterIMID = node.data.get('CATReportedIMID')
-                symbol = node.data.get('symbol', False)
-                if not symbol:
-                    symbol = node.data.get('optionID') 
+        
+    def display(self, indents):
+        white_space = '  '*indents
+        display_string = f'{white_space}type = {self.type},\n'+\
+                         f'{white_space}eventTimestamp = {self.eventTimestamp},\n'+\
+                         f'{white_space}symbol = {self.symbol},\n'+\
+                         f'{white_space}side = {self.side},\n'+\
+                         f'{white_space}quantity = {self.quantity},\n'+\
+                         f'{white_space}symbol = {self.symbol}\n'
+        return display_string
 
 
-                if not node.Parent:
-                    if node.data.get('type') not in ('MENO', 'MEOA', 'MONO', 'MOOA', 'MLNO', 'MLOA'):
-                        print(f"Node has no parent - {node.data}")
+def sort(all_nodes):
 
-                elif node.Parent == node.key and node.data['type'] not in {'MEOR', 'MOOR', 'MEORS', 'MOORS','MEMR', 'MOMR', 'MEMRS', 'MOMRS','MECR', 'MOCR', 'MECRS', 'MOCRS'}:
-                    if all_nodes.get(node.Parent):
-                        parent = all_nodes[node.Parent]
-                        parent.Children.append(node)
-                    else:
-                        print(f'Could not find parent for node {node.data["type"]} looking for parent {node.Parent} \n {node.data}')
+    for node_list in all_nodes.values():
+
+        for node in node_list:
+
+            CATReporterIMID = node.data.get('CATReportedIMID')
+            symbol = node.data.get('symbol', False)
+            if not symbol:
+                symbol = node.data.get('optionID') 
+
+
+            if not node.Parent:
+                if node.data.get('type') not in ('MENO', 'MEOA', 'MONO', 'MOOA', 'MLNO', 'MLOA'):
+                    print(f"Node has no parent - {node.data}")
+
+            elif node.Parent == node.key and node.data['type'] not in {'MEOR', 'MOOR', 'MEORS', 'MOORS','MEMR', 'MOMR', 'MEMRS', 'MOMRS','MECR', 'MOCR', 'MECRS', 'MOCRS'}:
+                if all_nodes.get(node.Parent):
+                    parent = all_nodes[node.Parent]
+                    parent.Children.append(node)
                 else:
-                    if all_nodes.get(node.Parent):
-                        parent_list = all_nodes.get(node.Parent)
-                        
-                        node_ts = float(node.data.get('eventTimestamp')[-8:])
-                        smallest_time_diff = 99999999
-                        closest_parent = None
-                        for parent in parent_list:
-                            parent_ts = float(parent.data.get('eventTimestamp')[-8:])
-                            time_diff = node_ts - parent_ts
-                            if time_diff < smallest_time_diff:
-                                closest_parent = parent
-                        closest_parent.Children.append(node)
-                    else:
-                        print(f'Could not find parent for node {node.data["type"]} looking for parent {node.Parent} \n {node.data}')
+                    print(f'Could not find parent for node {node.data["type"]} looking for parent {node.Parent} \n {node.data}')
+            else:
+                if all_nodes.get(node.Parent):
+                    parent_list = all_nodes.get(node.Parent)
+                    
+                    node_ts = float(node.data.get('eventTimestamp')[-8:])
+                    smallest_time_diff = 99999999
+                    closest_parent = None
+                    for parent in parent_list:
+                        parent_ts = float(parent.data.get('eventTimestamp')[-8:])
+                        time_diff = node_ts - parent_ts
+                        if time_diff < smallest_time_diff:
+                            closest_parent = parent
+                    closest_parent.Children.append(node)
+                else:
+                    print(f'Could not find parent for node {node.data["type"]} looking for parent {node.Parent} \n {node.data}')
 
+def traverse_up(all_nodes, orderID):
+
+    stack = []
+
+    key_matches = [x for x in all_nodes.keys() if str(orderID) == x.split('_')[2]]
+    earliest_key_match = key_matches[0]
+
+    node_match = all_nodes[earliest_key_match]
     
+
+    return node_match[0].display(0)
+
+def determine_group_id(all_nodes):
+    data = []
+    for key in all_nodes.keys():
+        earliest_node = all_nodes[key][0]
+        if earliest_node.Parent == None:
+            group_id = key
+            new_record = earliest_node.data
+            new_record['group_id'] = group_id
+            data.append(new_record)
+            for child in earliest_node.Children:
+                data = assign_group_id(data, child, group_id)
+    return pd.DataFrame(data).sort_values(by='eventTimestamp')
+
+def assign_group_id(data, child, group_id):
+    new_record = child.data
+    new_record['group_id'] = group_id
+    data.append(new_record)
+    for next_child in child.Children:
+        data = assign_group_id(data, next_child, group_id)
+    return data
+
+def display_by_group_id(all_nodes, orderID, linkage_df):
+    breakpoint()
+    group_id = linkage_df[linkage_df.orderID == orderID].group_id
+    return linkage_df[linkage_df.group_id == group_id]
 
 
 def main():
-
 
     all_nodes = {}
 
@@ -187,9 +218,7 @@ def main():
 
         inf.close()
 
-    Node.sort(all_nodes)
-    breakpoint()
-
+    sort(all_nodes)
     return all_nodes
     
 
@@ -204,11 +233,13 @@ def main():
     # temp = [x for x in Event.heads if x.event_type == 'MEIR']
 
     # allocation_dict = readAllocations()
-    # breakpoint()
     # temp = [elem for elem in heads if elem.FDID == 'JIL' and elem.side == 'SL' and elem.symbol == 'F']
     # total = sum(int(elem.quantity) for elem in temp)
 
 if __name__ == "__main__":
+    all_nodes = main()
+    linkage_df = determine_group_id(all_nodes)
+    breakpoint()
+    trail_info = display_by_group_id(all_nodes, '2315230000000009', linkage_df)
 
-    main()
 
