@@ -216,10 +216,10 @@ class StreamlitApp:
             st.subheader("Data Quality Exceptions by Error")
             col1, col2 = st.columns([1, 1])
             with col1:
-                st.dataframe(error_summary)  # Display DataFrame
+                st.dataframe(error_summary, height=400)  # Display DataFrame
             with col2:
                 # Bar chart for Data Quality Exceptions by Error (using Error Code)
-                fig1, ax1 = plt.subplots(figsize=(8, 6))
+                fig1, ax1 = plt.subplots(figsize=(10, 6))
                 error_codes = error_summary['Error Code'].unique()
                 colors1 = plt.cm.Paired(np.linspace(0, 1, len(error_codes)))
                 for i, error_code in enumerate(error_codes):
@@ -235,10 +235,10 @@ class StreamlitApp:
             st.subheader("Data Quality Exceptions by Event Type")
             col3, col4 = st.columns([1, 1])
             with col3:
-                st.dataframe(event_summary)  # Display DataFrame
+                st.dataframe(event_summary, height=400)  # Display DataFrame
             with col4:
                 # Bar chart for Data Quality Exceptions by Event Type (using Event Type)
-                fig2, ax2 = plt.subplots(figsize=(8, 6))
+                fig2, ax2 = plt.subplots(figsize=(10, 6))
                 event_types = event_summary['Event Type'].unique()
                 colors2 = plt.cm.Paired(np.linspace(0, 1, len(event_types)))
                 for i, event_type in enumerate(event_types):
