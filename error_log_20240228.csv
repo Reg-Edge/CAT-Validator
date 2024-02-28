@@ -1,0 +1,13 @@
+Key Column,Key Value,Event Date,Error Type,Exception,Attribute Name,Value,Event Type,Error Code,Allowed Values,Expected Data Type,Maximum Field Length
+orderID,2313230000000012,20230210,Data Quality Error,Missing Field,actionType,,MENO,E01,,,
+orderID,2313230000000012,20230210,Data Quality Error,Missing Field,firmROEID,,MENO,E01,,,
+orderID,2313230000000012,20230210,Data Quality Error,Missing Field,deptType,,MENO,E01,,,
+orderID,2313230000000012,20230210,Data Quality Error,Value not in list of permissible values,accountHolderType,B,MENO,E02,"A,E,F,I,O,V,P,X",,
+orderID,2313230000000012,20230210,Data Quality Error,Value not in list of permissible values,representativeInd,99,MENO,E02,"Y,YE,YP,YS,N,O,OS,N,OML,OMS,N",,
+orderID,2313230000000012,20230210,Data Quality Error,Field Length Exceeds maximum allowed length,electronicTimestamp,20230210T134456.527,MENO,E01,,,0
+orderID,2313230000000012,20230210,Data Quality Error,Missing Field,electronicDupFlag,,MEOM,E01,,,
+orderID,2313230000000012,20230210,Linkage Error,Intra-Linkage Error: Duplicate orderID,orderID,2313230000000012,MEOM,3004,,,
+orderID,2313230000000012,20230210,Data Quality Error,Missing Field,electronicDupFlag,,MEOM,E01,,,
+orderID,2313230000000012,20230210,Data Quality Error,Incorrect Datatype,CATReporterIMID,100,MEOM,E03,,STRING,
+orderID,2313230000000012,20230210,Linkage Error,Intra-Linkage Error: Duplicate firmROEID,firmROEID,20230210_O_280fb134-aadf-4ece-9ed6-88843e3dd15b,MEOM,3002,,,
+orderID,2313230000000012,20230210,Linkage Error,Intra-Linkage Error: Duplicate orderID,orderID,2313230000000012,MEOM,3004,,,
