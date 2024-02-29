@@ -6,6 +6,7 @@ import math
 import os
 import re
 
+
 warnings.simplefilter('ignore') 
 
 
@@ -16,6 +17,10 @@ global_schema = json.load(open(config_file_path, 'r'))
 output_file_path = os.getcwd() + "\\Output"
 error_logs = []
 duplicate_checker = set()
+account_dict = dict()
+affiliate_dict = dict()
+IMID_pattern = r"\d{3}:[A-Z]{4}"
+
 
     
 def determine_file_type(file):
@@ -86,6 +91,8 @@ def data_type_check(record, event_schema):
                 event_date = getEventDate(record)
                 error_logs.append({'Key Column':key_column, 'Key Value': key_value,'Event Date':event_date,'Error Type':'Data Quality Error','Exception': 'Incorrect Datatype', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Event Type': event_schema["eventName"], 'Error Code': 'E03','Allowed Values': '','Expected Data Type': 'BOOLEAN', 'Maximum Field Length': ''})
 
+
+
 def max_length_check(record, event_schema):
     schema_of_fields = event_schema.get("fields")
     list_of_datatypes = global_schema["dataTypes"]
@@ -106,7 +113,7 @@ def max_length_check(record, event_schema):
             if(length_of_field_data>field_max_length):
                 key_column, key_value = get_event_key(record)
                 event_date = getEventDate(record)
-                error_logs.append({'Key Column':key_column, 'Key Value': key_value,'Event Date':event_date,'Error Type':'Data Quality Error','Exception': 'Field Length Exceeds maximum allowed length', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Event Type': event_schema["eventName"], 'Error Code': 'E01','Allowed Values': '','Expected Data Type': '', 'Maximum Field Length': field_max_length})
+                error_logs.append({'Key Column':key_column, 'Key Value': key_value,'Event Date':event_date,'Error Type':'Data Quality Error','Exception': 'Field Length Exceeds maximum allowed length', 'Attribute Name': field_name, 'Value': record.get(field_name), 'Event Type': event_schema["eventName"], 'Error Code': 'E04','Allowed Values': '','Expected Data Type': '', 'Maximum Field Length': field_max_length})
         
 
 def export_to_csv(error_logs):
@@ -230,6 +237,57 @@ def get_event_key(record):
     
    return keyColumn, keyValue
 
+def check_aggregate_errors(record, event_schema):
+    if record.get('firmDesignatedID') and record.get('accountHolderType'):
+        fdid = record.get('firmDesignatedID')
+        acct_holder = record.get('accountHolderType')
+        breakpoint()
+        
+        if account_dict.get(fdid) is None:
+            account_dict[fdid] = acct_holder
+            breakpoint()
+        elif not(account_dict.get(fdid) is None) and account_dict[fdid] != acct_holder:
+            key_column, key_value = get_event_key(record)
+            event_date = getEventDate(record)
+            error_logs.append({'Key Column':key_column, 'Key Value': key_value,'Event Date':event_date,'Error Type':'Aggregate Error','Exception': 'Multiple accounts associated with same FDID', 'Attribute Name': 'FDID', 'Value': record.get('firmDesignatedID'), 'Event Type': event_schema["eventName"], 'Error Code': 'A01','Allowed Values': '','Expected Data Type': '', 'Maximum Field Length': ''})
+            
+
+    if record.get('firmDesignatedID') and record.get('affiliateFlag'):
+        fdid = record.get('firmDesignatedID')
+        affiliate_flag = record.get('affiliateFlag')
+
+        if fdid not in affiliate_dict:
+            account_dict[fdid] = affiliate_flag
+        elif fdid in affiliate_dict and affiliate_dict[fdid] != affiliate_flag:
+            key_column, key_value = get_event_key(record)
+            event_date = getEventDate(record)
+            error_logs.append({'Key Column':key_column, 'Key Value': key_value,'Event Date':event_date,'Error Type':'Aggregate Error','Exception': 'Multiple affiliate flags associated with same FDID', 'Attribute Name': 'FDID', 'Value': record.get('firmDesignatedID'), 'Event Type': event_schema["eventName"], 'Error Code': 'A02','Allowed Values': '','Expected Data Type': '', 'Maximum Field Length': ''})
+
+def check_conditional_errors(record, event_schema):
+    if record.get('manualFlag') == True and (record.get('electronicTimestamp') is None or record.get('electronicTimestamp') == ''):
+        key_column, key_value = get_event_key(record)
+        event_date = getEventDate(record)
+        error_logs.append({'Key Column':key_column, 'Key Value': key_value,'Event Date':event_date,'Error Type':'Conditional Error','Exception': 'Electronic Timestamp must be populated when manual flag is True', 'Attribute Name': 'electronicTimestamp', 'Value': record.get('electronicTimestamp'), 'Event Type': event_schema["eventName"], 'Error Code': 'C01','Allowed Values': '','Expected Data Type': '', 'Maximum Field Length': ''})
+    
+    if ((record.get('price') is None or record.get('price') == '') and record.get('orderType') == 'LMT') or (not (record.get('price') is None or record.get('price') == '') and record.get('orderType') == 'MKT'):
+        key_column, key_value = get_event_key(record)
+        event_date = getEventDate(record)
+        error_logs.append({'Key Column':key_column, 'Key Value': key_value,'Event Date':event_date,'Error Type':'Conditional Error','Exception': 'Price must be left blank for order type MKT and must be populated for order type LMT', 'Attribute Name': 'price', 'Value': record.get('price'), 'Event Type': event_schema["eventName"], 'Error Code': 'C02','Allowed Values': '','Expected Data Type': '', 'Maximum Field Length': ''})
+
+    if ((record.get('session') is None or record.get('price') == '') and record.get('destinationType') == 'E'):
+        key_column, key_value = get_event_key(record)
+        event_date = getEventDate(record)
+        error_logs.append({'Key Column':key_column, 'Key Value': key_value,'Event Date':event_date,'Error Type':'Conditional Error','Exception': 'Session ID must be populated for destination type E', 'Attribute Name': 'session', 'Value': record.get('session'), 'Event Type': event_schema["eventName"], 'Error Code': 'C03','Allowed Values': '','Expected Data Type': '', 'Maximum Field Length': ''})
+
+    if ((record.get('destinationType') == 'F' or record.get('destinationType') == 'O') and not re.match(IMID_pattern,record.get('destination'))):
+        key_column, key_value = get_event_key(record)
+        event_date = getEventDate(record)
+        error_logs.append({'Key Column':key_column, 'Key Value': key_value,'Event Date':event_date,'Error Type':'Conditional Error','Exception': 'If destination type is F or O, destination must be populated as three digits followed by olon followed by 4 uppercase characters (IMID)', 'Attribute Name': 'destination', 'Value': record.get('destination'), 'Event Type': event_schema["eventName"], 'Error Code': 'C04','Allowed Values': '','Expected Data Type': '', 'Maximum Field Length': ''})
+
+    
+
+
+
 def getEventDate(record):
 
     return record.get('eventTimestamp').split('T')[0]
@@ -265,6 +323,8 @@ def main():
             data_type_check(cat_event,event_schema)
             max_length_check(cat_event,event_schema)
             check_duplicate_keys_same_day(cat_event,event_schema)
+            check_aggregate_errors(cat_event, event_schema)
+            check_conditional_errors(cat_event,event_schema)
         export_to_csv(error_logs)
 
             
