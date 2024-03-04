@@ -1,3 +1,5 @@
+import shutil
+import tempfile
 import pandas as pd
 import warnings
 import csv
@@ -124,6 +126,22 @@ def export_to_csv(error_logs):
     else:
         print("No error logs")
 
+def sort_file_in_place(file):
+    data = []
+    with open(file, 'r') as original:
+        with tempfile.NamedTemporaryFile(mode= 'w', delete = False) as temp:
+            for line in original:
+
+                event_attr = json.loads(line.strip())
+                data.append(event_attr)
+
+            data_after_sorting = sorted(data, key = lambda x: x.get('eventTimestamp', ''))
+
+            for event_attr in data_after_sorting:
+                json.dump(event_attr, temp)
+                temp.write('\n')
+    shutil.move(temp.name, file)
+
             
 def format_cat_data(filepath, csv_bool):
     
@@ -241,18 +259,17 @@ def check_aggregate_errors(record, event_schema):
     if record.get('firmDesignatedID') and record.get('accountHolderType'):
         fdid = record.get('firmDesignatedID')
         acct_holder = record.get('accountHolderType')
-        breakpoint()
         
         if account_dict.get(fdid) is None:
             account_dict[fdid] = acct_holder
-            breakpoint()
+            
         elif not(account_dict.get(fdid) is None) and account_dict[fdid] != acct_holder:
             key_column, key_value = get_event_key(record)
             event_date = getEventDate(record)
             error_logs.append({'Key Column':key_column, 'Key Value': key_value,'Event Date':event_date,'Error Type':'Aggregate Error','Exception': 'Multiple accounts associated with same FDID', 'Attribute Name': 'FDID', 'Value': record.get('firmDesignatedID'), 'Event Type': event_schema["eventName"], 'Error Code': 'A01','Allowed Values': '','Expected Data Type': '', 'Maximum Field Length': ''})
             
 
-    if record.get('firmDesignatedID') and record.get('affiliateFlag'):
+    if record.get('firmDesignatedID') and record.get('affiliateFlagg'):
         fdid = record.get('firmDesignatedID')
         affiliate_flag = record.get('affiliateFlag')
 
@@ -314,6 +331,8 @@ def main():
         if file_type == 'JSON': csv_bool = False
         elif file_type == 'CSV': csv_bool = True
 
+
+        sort_file_in_place(input_file_dir_path+file)
 
         formatted_cat_data = format_cat_data(input_file_dir_path+file, csv_bool)
                 
