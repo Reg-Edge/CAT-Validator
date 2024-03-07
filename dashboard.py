@@ -10,9 +10,11 @@ class StreamlitApp:
         self.setup_page()
         self.style_nav_bar()
         self.page_router()
+        
 
     def setup_page(self):
         st.set_page_config(page_title="CAT Validator App", layout="wide")
+        self.submissions = self.load_data()
         st.title('CAT VALIDATOR')
         st.markdown("""
     <style>
@@ -81,7 +83,7 @@ class StreamlitApp:
         st.subheader("CAT Submissions Data")
         
         # Load the data
-        data = self.load_data()
+        data = self.submissions
         data['eventTimestamp'] = pd.to_datetime(data['eventTimestamp'], format = 'mixed' ) #format='%Y%m%dT%H%M%S.%f'
         
         # Asset classes and event types for filtering (example placeholders)
@@ -133,6 +135,14 @@ class StreamlitApp:
         except FileNotFoundError:
             st.error(f"File {filename} not found.")
             return pd.DataFrame() 
+
+    def fetch_submissions_sent(self):
+        return len(self.submissions)
+    def fetch_submissions_rejected(self,error_data):
+        return len(error_data)
+    def fetch_exceptions_generated(self,error_data):
+        return len(error_data['Key Value'].unique())
+
 
     def display_exceptions(self):
         st.subheader("Exceptions")
@@ -222,7 +232,11 @@ class StreamlitApp:
         if submission_date:
             error_data = self.load_error_data(submission_date)
             if not error_data.empty:
-                self.display_summary_stats()
+                submissions_sent = self.fetch_submissions_sent()
+                submissions_rejects = self.fetch_exceptions_generated(error_data)
+                exceptions_generated = self.fetch_submissions_rejected(error_data)
+                
+                self.display_summary_stats(submissions_sent,submissions_rejects,exceptions_generated)
                 # Data Quality Exceptions by Error
                 error_summary = error_data.groupby(['Error Code', 'Error Type']).size().reset_index(name='Count')
                 
@@ -275,7 +289,7 @@ class StreamlitApp:
             )
             st.plotly_chart(fig2, use_container_width=True)
 
-    def display_summary_stats(self):
+    def display_summary_stats(self,subs_sent, subs_rejects, exceps_gen):
         # Custom CSS to style the containers
         st.markdown("""
         <style>
@@ -299,10 +313,10 @@ class StreamlitApp:
 
         # Data for the containers
         data = [
-            {"title": "Submissions Sent", "number": "1,234"},
-            {"title": "Submissions Received", "number": "1,100"},
-            {"title": "Submissions Rejected", "number": "134"},
-            {"title": "Exceptions Generated", "number": "56"}
+            {"title": "Submissions Sent", "number": f"{subs_sent}"},
+            {"title": "Submissions Received", "number": f"{subs_sent}"},
+            {"title": "Submissions Rejected", "number": f"{subs_rejects}"},
+            {"title": "Exceptions Generated", "number": f"{exceps_gen}"}
         ]
 
         # Creating four equally spaced containers
