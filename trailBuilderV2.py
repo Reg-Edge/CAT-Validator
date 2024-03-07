@@ -147,11 +147,11 @@ def sort(all_nodes):
                 if all_nodes.get(node.Parent):
                     parent_list = all_nodes.get(node.Parent)
                     
-                    node_ts = float(node.data.get('eventTimestamp')[-8:])
+                    node_ts = float(node.data.get('eventTimestamp').split('T')[1])
                     smallest_time_diff = 99999999
                     closest_parent = None
                     for parent in parent_list:
-                        parent_ts = float(parent.data.get('eventTimestamp')[-8:])
+                        parent_ts = float(parent.data.get('eventTimestamp').split('T')[1])
                         time_diff = node_ts - parent_ts
                         if time_diff < smallest_time_diff:
                             closest_parent = parent
@@ -189,12 +189,13 @@ def assign_group_id(data, child, group_id):
     new_record['group_id'] = group_id
     data.append(new_record)
     for next_child in child.Children:
+        breakpoint()
         data = assign_group_id(data, next_child, group_id)
     return data
 
 def display_by_group_id(all_nodes, orderID, linkage_df):
-    breakpoint()
     group_id = linkage_df[linkage_df.orderID == orderID].group_id
+    breakpoint()
     return linkage_df[linkage_df.group_id == group_id]
 
 
@@ -203,7 +204,7 @@ def main():
     all_nodes = {}
 
     cwd = 'Input/'
-    file_re = re.compile('1234_ABCD_20240101_TEST_OrderEvents_000001.json')
+    file_re = re.compile('1234_ABCD_20240101_TEST_OrderEvents_000002.json')
 
     for file in os.listdir(cwd):
         if not file_re.search(file): continue
@@ -239,7 +240,6 @@ def main():
 if __name__ == "__main__":
     all_nodes = main()
     linkage_df = determine_group_id(all_nodes)
-    breakpoint()
     trail_info = display_by_group_id(all_nodes, '2315230000000009', linkage_df)
 
 

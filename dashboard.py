@@ -5,6 +5,7 @@ import numpy as np
 import trailBuilderV2
 
 class StreamlitApp:
+    
     def __init__(self):
         self.setup_page()
         self.style_nav_bar()
@@ -48,8 +49,7 @@ class StreamlitApp:
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19); /* Pop effect */
     }
     </style>
-    """, unsafe_allow_html=True)
-        
+    """, unsafe_allow_html=True)     
 
     def page_router(self):
         # Define page options
@@ -82,6 +82,7 @@ class StreamlitApp:
         
         # Load the data
         data = self.load_data()
+        data['eventTimestamp'] = pd.to_datetime(data['eventTimestamp'], format = 'mixed' ) #format='%Y%m%dT%H%M%S.%f'
         
         # Asset classes and event types for filtering (example placeholders)
         asset_classes = {'Equities': ['MECO', 'MECOM', 'MEMR', 'MEOC'], 'Options': ['MEOC', 'MEOM', 'MEOR']}
@@ -95,7 +96,7 @@ class StreamlitApp:
             selected_symbol = st.selectbox('Symbol', options=['All'] + list(unique_symbols))
         
         with col2:
-            default_date = data['eventTimestamp'].max().date()
+            default_date = pd.to_datetime(data['eventTimestamp'].max())
             selected_date = st.date_input("Event Date", value=default_date, key='event_date')
         
         with col3:
@@ -200,7 +201,7 @@ class StreamlitApp:
 
         if selected_order_id != 'Select an orderID':
             # Displaying the return value from trailBuilderV2.main(orderID)
-            trail_info = trailBuilderV2.display_by_group_id(all_nodes, selected_order_id, linkage_df)
+            trail_info = trailBuilderV2.display_by_group_id(selected_order_id, linkage_df)
             st.write(trail_info)
             filtered_data = data[data['orderID'] == selected_order_id]
             st.dataframe(filtered_data)
@@ -208,10 +209,9 @@ class StreamlitApp:
         else:
             st.write("Please select an orderID to view details.")
         
-
     def load_data(self):
         # Assuming 'consolidated_data.csv' contains your CAT submissions data
-        data = pd.read_csv('consolidated_data.csv')
+        data = pd.read_json('Input/1234_ABCD_20240101_TEST_OrderEvents_000002.json', lines=True)
         data['eventTimestamp'] = pd.to_datetime(data['eventTimestamp'], errors='ignore')
         return data
 
@@ -238,7 +238,6 @@ class StreamlitApp:
                 st.markdown('<div class="data-container">', unsafe_allow_html=True)
                 self.plot_event_summary(event_summary)
                 st.markdown('</div>', unsafe_allow_html=True)  # End of container
-
 
     def plot_error_summary(self, error_summary):
         st.subheader("Data Quality Exceptions by Error")
@@ -275,6 +274,7 @@ class StreamlitApp:
                 margin=dict(t=60, l=60, b=60, r=60)  # Adjust margins to create a 'border' effect
             )
             st.plotly_chart(fig2, use_container_width=True)
+
     def display_summary_stats(self):
         # Custom CSS to style the containers
         st.markdown("""
