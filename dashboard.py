@@ -243,6 +243,10 @@ class StreamlitApp:
                 # Data Quality Exceptions by Event Type
                 event_summary = error_data.groupby(['Event Type', 'Error Type']).size().reset_index(name='Count')
 
+                exception_summary = error_data.groupby(['Error Type', 'Exception']).size().reset_index(name='Count')
+
+                attribute_summary = error_data.groupby(['Exception', 'Attribute Name']).size().reset_index(name='Count')
+
                 # Container for Data Quality Exceptions by Error with custom styling
                 st.markdown('<div class="data-container">', unsafe_allow_html=True)
                 self.plot_error_summary(error_summary)
@@ -252,6 +256,39 @@ class StreamlitApp:
                 st.markdown('<div class="data-container">', unsafe_allow_html=True)
                 self.plot_event_summary(event_summary)
                 st.markdown('</div>', unsafe_allow_html=True)  # End of container
+
+                # Container for exception summary
+                st.markdown('<div class="data-container">', unsafe_allow_html=True)
+                self.plot_exception_summary(exception_summary)
+                st.markdown('</div>', unsafe_allow_html=True)  # End of container
+
+                # Container for attribute summary
+                st.markdown('<div class="data-container">', unsafe_allow_html=True)
+                self.plot_attribute_summary(attribute_summary)
+                st.markdown('</div>', unsafe_allow_html=True)  # End of container
+
+    def plot_attribute_summary(self, aggregate):
+        st.subheader("Data Quality Exceptions by Attribute Type")
+        col1, col2 = st.columns([1, 1])
+
+        # Assuming 'aggregate' is your DataFrame with "Error Type", "Exception", and "Count" columns.
+        with col1:
+            st.dataframe(aggregate, height=400)  # Display the data frame
+
+        with col2:
+            # Create a bar chart using 'Error Type' and 'Exception' for the x-axis and 'Count' for the y-axis
+            fig2 = px.bar(aggregate, x='Exception', y='Count', color='Attribute Name', 
+                        title="Data Quality Exceptions by Attribute", 
+                        labels={'Count':'Number of Exceptions', 'Exception': 'Exception', 'Attribute Name': 'Attribute Name'})
+            fig2.update_layout(
+                xaxis_title='Exception',
+                yaxis_title='Number of Exceptions',
+                legend_title='Attribute Name',
+                paper_bgcolor='rgb(233,233,233)',  # Light gray background around the chart
+                plot_bgcolor='rgb(233,233,233)',  # Light gray background inside the chart area
+                margin=dict(t=60, l=60, b=60, r=60)  # Adjust margins to create a 'border' effect
+            )
+            st.plotly_chart(fig2, use_container_width=True)
 
     def plot_error_summary(self, error_summary):
         st.subheader("Data Quality Exceptions by Error")
@@ -283,6 +320,29 @@ class StreamlitApp:
                 xaxis_title='Event Type',
                 yaxis_title='Number of Exceptions',
                 legend_title='Event Type',
+                paper_bgcolor='rgb(233,233,233)',  # Light gray background around the chart
+                plot_bgcolor='rgb(233,233,233)',  # Light gray background inside the chart area
+                margin=dict(t=60, l=60, b=60, r=60)  # Adjust margins to create a 'border' effect
+            )
+            st.plotly_chart(fig2, use_container_width=True)
+
+    def plot_exception_summary(self, aggregate):
+        st.subheader("Data Quality Exceptions by Error Type")
+        col1, col2 = st.columns([1, 1])
+
+        # Assuming 'aggregate' is your DataFrame with "Error Type", "Exception", and "Count" columns.
+        with col1:
+            st.dataframe(aggregate, height=400)  # Display the data frame
+
+        with col2:
+            # Create a bar chart using 'Error Type' and 'Exception' for the x-axis and 'Count' for the y-axis
+            fig2 = px.bar(aggregate, x='Error Type', y='Count', color='Exception', 
+                        title="Data Quality Exceptions by Error Type", 
+                        labels={'Count':'Number of Exceptions', 'Error Type': 'Error Type', 'Exception': 'Exception'})
+            fig2.update_layout(
+                xaxis_title='Error Type',
+                yaxis_title='Number of Exceptions',
+                legend_title='Exception',
                 paper_bgcolor='rgb(233,233,233)',  # Light gray background around the chart
                 plot_bgcolor='rgb(233,233,233)',  # Light gray background inside the chart area
                 margin=dict(t=60, l=60, b=60, r=60)  # Adjust margins to create a 'border' effect
