@@ -21,6 +21,7 @@ error_logs = []
 duplicate_checker = set()
 account_dict = dict()
 affiliate_dict = dict()
+sequence_checker = set()
 IMID_pattern = r"\d{3}:[A-Z]{4}"
 
 
@@ -178,7 +179,7 @@ def format_cat_data(filepath, csv_bool):
 
         yield cat_event, event_schema
 
-def check_duplicate_keys_same_day(record, event_schema):
+def check_duplicate_keys_same_day_30xx(record, event_schema):
     
     if record.get('firmROEID'):
         if record.get('firmROEID') in duplicate_checker:
@@ -303,11 +304,28 @@ def check_conditional_errors(record, event_schema):
 
     
 
+def populateErrorLogs(record, event_schema, error_type = '', exception = '', attribute = '', key= '', error_code = '', allowed = '', dtype = '', field_length = ''):
+    key_column, key_value = get_event_key(record)
+    event_date = getEventDate(record)
+    error_logs.append({'Key Column':key_column, 'Key Value': key_value,'Event Date':event_date,'Error Type':error_type,'Exception': exception, 'Attribute Name': attribute, 'Value': record.get(key), 'Event Type': event_schema["eventName"], 'Error Code': error_code,'Allowed Values': allowed,'Expected Data Type': dtype, 'Maximum Field Length': field_length})
 
 
 def getEventDate(record):
 
     return record.get('eventTimestamp').split('T')[0]
+
+def checkOutOfSequence(record,event_schema):
+    if record.get('orderID') not in sequence_checker:
+        sequence_checker.add(record.get('orderID'))
+
+    if record.get('parentOrderID') and record.get('parentOrderID') not in sequence_checker:
+        populateErrorLogs(record, event_schema, 'Linkage Error', 'Secondary Order received before primary order', 'orderID', 'orderID', 'L01', '','', '', '')
+    elif record.get('routedOrderID') and record.get('routedOrderID').split[0] not in sequence_checker:
+        populateErrorLogs(record, event_schema, 'Linkage Error', 'Secondary Order received before primary order', 'orderID', 'orderID', 'L01', '','', '', '')
+
+        
+        
+
 
 
 
@@ -341,7 +359,7 @@ def main():
             allowed_values_check(cat_event,event_schema)
             data_type_check(cat_event,event_schema)
             max_length_check(cat_event,event_schema)
-            check_duplicate_keys_same_day(cat_event,event_schema)
+            check_duplicate_keys_same_day_30xx(cat_event,event_schema)
             check_aggregate_errors(cat_event, event_schema)
             check_conditional_errors(cat_event,event_schema)
         export_to_csv(error_logs)
